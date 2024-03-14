@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Accessibility;
 using UnityEngine.UI;
@@ -16,6 +17,7 @@ public class GamePlay : MonoBehaviour
     public int boardSize = 3;
     public Character[,] board;
 
+    bool isGamePlay;
     private int cakeRow;
     private int cakeColumn;
     private int giftBoxRow;
@@ -35,7 +37,10 @@ public class GamePlay : MonoBehaviour
         InitializeGame();
         Debug.Log(board.Length);
         CreateCharacter();
+        isGamePlay = true;
     }
+
+   
     // Update is called once per frame
     void Update()
     {
@@ -56,9 +61,18 @@ public class GamePlay : MonoBehaviour
             MoveCharacter(0, 1);
         }
 
-        time  -= Time.deltaTime;
+        if(isGamePlay)
+        {
+            time -= Time.deltaTime;
+        }
+        
         countDown.text = "00:"  + ((int)time).ToString();
-        Debug.Log(time);
+            //Debug.Log(time);
+        if(time < 1)
+        {
+            GameManager.instance.GameFail();
+            isGamePlay = false;
+        }
     }
 
     private void InitializeGame()
@@ -88,16 +102,20 @@ public class GamePlay : MonoBehaviour
             {
                 foreach (Character c in charaterList)
                 {
-                    if (board[row, column].type == c.type)
+                    board[row, column].typeCurrent = board[row, column].typeDefauft;
+                    if (board[row, column].typeCurrent == c.typeCurrent)
                     {
+                        ClearChildObjects(board[row, column].transform);
+                        
+                        //board[row, column].GetComponent<GameObject>().SetActive(true);
                         Character character = Instantiate(c, board[row, column].transform.position, Quaternion.identity, board[row, column].transform);                     
                         //Debug.Log("Create");
-                        if (board[row, column].type == GameManager.TypeCharacter.CAKE)
+                        if (board[row, column].typeCurrent == GameManager.TypeCharacter.CAKE)
                         {
                             cakeColumn = column;
                             cakeRow = row;
                         }
-                        if (board[row, column].type == GameManager.TypeCharacter.GIFTBOX)
+                        if (board[row, column].typeCurrent == GameManager.TypeCharacter.GIFTBOX)
                         {
                             giftBoxColumn = column;
                             giftBoxRow = row;
@@ -121,6 +139,18 @@ public class GamePlay : MonoBehaviour
         }*/
     }
 
+    private void ClearChildObjects(Transform parent)
+    {
+        // Lặp qua tất cả các game object con của parent
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            // Lấy game object con tại vị trí i
+            GameObject childObject = parent.GetChild(i).gameObject;
+
+            // Xóa game object con
+            Destroy(childObject);
+        }
+    }
     private void MoveCharacter(int rowOffset, int columnOffset)
     {
         /*for (int row = 0; row < boardSize; row++)
@@ -137,7 +167,7 @@ public class GamePlay : MonoBehaviour
                 }    
             }
         }*/
-        if (board[cakeRow, cakeColumn].type == GameManager.TypeCharacter.CAKE )
+        if (board[cakeRow, cakeColumn].typeCurrent == GameManager.TypeCharacter.CAKE )
         {
             /*if(board[cakeRow + rowOffset, cakeColumn + columnOffset].type == GameManager.TypeCharacter.GIFTBOX && cakeColumn == giftBoxColumn + 1 && cakeRow == giftBoxRow)
             {
@@ -158,7 +188,7 @@ public class GamePlay : MonoBehaviour
                 Debug.Log("Toa do Cake: " + cakeRow + " " + cakeColumn);
             }*/
         }
-        if (board[giftBoxRow, giftBoxColumn].type == GameManager.TypeCharacter.GIFTBOX)
+        if (board[giftBoxRow, giftBoxColumn].typeCurrent == GameManager.TypeCharacter.GIFTBOX)
         {
             while(IsValidMove(giftBoxRow + rowOffset, giftBoxColumn + columnOffset) )
             {
@@ -184,12 +214,12 @@ public class GamePlay : MonoBehaviour
         Vector3 tempPosition;
         Transform parent1;
         GameManager.TypeCharacter tmp;
-        if ((obj1.type == GameManager.TypeCharacter.CAKE && obj2.type == GameManager.TypeCharacter.GIFTBOX))
+        if ((obj1.typeCurrent == GameManager.TypeCharacter.CAKE && obj2.typeCurrent == GameManager.TypeCharacter.GIFTBOX))
         {
             MergeCell(obj1);
             return;
         }
-        else if((obj1.type == GameManager.TypeCharacter.GIFTBOX && obj2.type == GameManager.TypeCharacter.CAKE))
+        else if((obj1.typeCurrent == GameManager.TypeCharacter.GIFTBOX && obj2.typeCurrent == GameManager.TypeCharacter.CAKE))
         {
             child1 = obj1.transform.GetChild(0);
             child2 = obj2.transform.GetChild(0);
@@ -204,9 +234,9 @@ public class GamePlay : MonoBehaviour
             child1.SetParent(child2.parent, false);
             child2.SetParent(parent1, false);
 
-            tmp = obj1.type;
-            obj1.type = obj2.type;
-            obj2.type = tmp;
+            tmp = obj1.typeCurrent;
+            obj1.typeCurrent = obj2.typeCurrent;
+            obj2.typeCurrent = tmp;
 
             MergeCell(obj2);
             return;
@@ -223,10 +253,10 @@ public class GamePlay : MonoBehaviour
         child1.SetParent(child2.parent, false);
         child2.SetParent(parent1, false);
 
-        
-        tmp = obj1.type;
-        obj1.type = obj2.type;
-        obj2.type = tmp;
+
+        tmp = obj1.typeCurrent;
+        obj1.typeCurrent = obj2.typeCurrent;
+        obj2.typeCurrent = tmp;
     }
 
     private bool IsValidMove(int row, int column)
@@ -238,11 +268,11 @@ public class GamePlay : MonoBehaviour
         }
 
         
-        if (board[row, column].type == GameManager.TypeCharacter.CANDY)
+        if (board[row, column].typeCurrent == GameManager.TypeCharacter.CANDY)
         {
             return false; 
         }
-        if (board[row, column].type == GameManager.TypeCharacter.GIFTBOX)
+        if (board[row, column].typeCurrent == GameManager.TypeCharacter.GIFTBOX)
         {
             if(CanWin())
             {
@@ -251,7 +281,7 @@ public class GamePlay : MonoBehaviour
             }
             return false; 
         }
-        if(board[row, column].type == GameManager.TypeCharacter.CAKE)
+        if(board[row, column].typeCurrent == GameManager.TypeCharacter.CAKE)
         {
             if (CanWin())
             {
@@ -277,7 +307,11 @@ public class GamePlay : MonoBehaviour
     private void MergeCell(Character cake)
     {
         
-        cake.gameObject.SetActive(false);
+        //cake.gameObject.SetActive(false);
         GameManager.instance.GameCompleted();
+        isGamePlay = false;
     }
+
+   
+    
 }

@@ -7,8 +7,9 @@ public class GameManager : FastSingleton<GameManager>
 {
     UIManager uiManager;
     public int currentLevel;
+    public int levelPlay;
     public float countDown;
-    public GameObject levelList;
+    public List<GameObject> levelList;
     public enum TypeCharacter
     {
         FRAME,
@@ -25,7 +26,8 @@ public class GameManager : FastSingleton<GameManager>
 
     private void OnInit()
     {
-        currentLevel = 1;
+        currentLevel = 3;
+        levelPlay = currentLevel;
         countDown = 45;
         uiManager = UIManager.instance;
     }    
@@ -48,5 +50,25 @@ public class GameManager : FastSingleton<GameManager>
         uiManager.SetActiveSeclectLevel(false);
         uiManager.ShowCompleted(false);
         uiManager.ShowFail(false);
+        foreach (var item in levelList)
+        {
+            item.gameObject.SetActive(false);
+        }
     }
+
+    public void PlayLevel()
+    {
+        foreach(var item in levelList)
+        {
+            item.gameObject.SetActive(false);
+        }
+
+        for(int i =  0; i < levelList.Count; i++)
+        {
+            if(i == levelPlay - 1)
+            {
+                levelList[i].gameObject.SetActive(true);
+            }
+        }
+    }    
 }

@@ -10,18 +10,23 @@ public class PopupCompleted : MonoBehaviour
     [SerializeField] Button btNextRight;
     GameManager gameManager;
 
-    private void Start()
+    private void OnEnable()
     {
         gameManager = GameManager.instance;
+           
         btReset.onClick.AddListener(OnClickBtReset);
         btHome.onClick.AddListener(OnClickBtHome);
         btNextRight.onClick.AddListener(OnClickBtNextRight);
+        if (gameManager.levelPlay >= gameManager.levelList.Count)
+        {
+            btNextRight.interactable = false;
+        }
     }
 
     public void OnClickBtReset()
     {
         gameObject.SetActive(false);
-        //gameManager.
+        gameManager.PlayLevel();
     }
 
     public void OnClickBtHome()
@@ -32,6 +37,16 @@ public class PopupCompleted : MonoBehaviour
     public void OnClickBtNextRight()
     {
         gameObject.SetActive(false);
-        gameManager.currentLevel += 1;
+        if(gameManager.currentLevel > gameManager.levelPlay)
+        {
+            gameManager.levelPlay += 1;
+        } 
+        else
+        {
+            gameManager.currentLevel += 1;
+            gameManager.levelPlay = gameManager.currentLevel;
+            
+        }
+        gameManager.PlayLevel();
     }
 }
